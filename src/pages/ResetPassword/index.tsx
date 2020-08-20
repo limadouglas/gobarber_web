@@ -13,7 +13,6 @@ import logoImg from '../../assets/logo.svg';
 import { Container, Content, Background, AnimationContainer } from './styles';
 import Button from '../../components/Button/index';
 import Input from '../../components/Input/index';
-import { useAuth } from '../../hooks/auth';
 import { useToast } from '../../hooks/toast';
 import api from '../../services/api';
 
@@ -24,12 +23,9 @@ interface ResetPasswordFormData {
 
 const ResetPassword: React.FC = () => {
   const formRef = useRef<FormHandles>(null);
-  const { signIn, user } = useAuth();
   const { addToast } = useToast();
   const history = useHistory();
   const location = useLocation();
-
-  console.log(user);
 
   const handleSubmit = useCallback(
     async (data: ResetPasswordFormData) => {
