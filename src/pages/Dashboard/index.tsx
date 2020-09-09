@@ -4,8 +4,9 @@ import { FiPower, FiClock } from 'react-icons/fi';
 import DayPicker, { DayModifiers } from 'react-day-picker';
 import 'react-day-picker/lib/style.css';
 
-import { format, isToday, parseISO } from 'date-fns';
+import { format, isToday, parseISO, isAfter } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
+import { Link } from 'react-router-dom';
 import logoImg from '../../assets/logo.svg';
 import {
   Container,
@@ -47,7 +48,7 @@ const Dashboard: React.FC = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
 
   const handleDateChange = useCallback((day: Date, modifiers: DayModifiers) => {
-    if (modifiers.available) {
+    if (modifiers.available && !modifiers.disabled) {
       setSelectedDate(day);
     }
   }, []);
@@ -116,10 +117,16 @@ const Dashboard: React.FC = () => {
     });
   }, [appointments]);
 
-  const afterAppointment = useMemo(() => {
+  const afternoonAppointment = useMemo(() => {
     return appointments.filter(appointment => {
       return parseISO(appointment.date).getHours() >= 12;
     });
+  }, [appointments]);
+
+  const nextAppointment = useMemo(() => {
+    return appointments.find(appointment =>
+      isAfter(parseISO(appointment.date), new Date()),
+    );
   }, [appointments]);
 
   return (
@@ -131,7 +138,9 @@ const Dashboard: React.FC = () => {
             <img src={user.avatar_url} alt={user.name} />
             <div>
               <span>Bem vindo,</span>
-              <strong>{user.name}</strong>
+              <Link to="/profile">
+                <strong>{user.name}</strong>
+              </Link>
             </div>
           </Profile>
           <button type="button" onClick={signOut}>
@@ -148,22 +157,27 @@ const Dashboard: React.FC = () => {
             <span>{selectedDateAsText}</span>
             <span>{selectedWeekDay}</span>
           </p>
-          <NextAppointment>
-            <strong>Atendimento a seguir</strong>
-            <div>
-              <img
-                src="https://avatars2.githubusercontent.com/u/21013545?s=460&u=ae012c690912598c03108dd1e7237ba18547f7bc&v=4"
-                alt="Douglas Henrique"
-              />
-              <strong>Dougla Henrique</strong>
-              <span>
-                <FiClock />
-                08:00
-              </span>
-            </div>
-          </NextAppointment>
+          {isToday(selectedDate) && nextAppointment && (
+            <NextAppointment>
+              <strong>Agendamento a seguir</strong>
+              <div>
+                <img
+                  src={nextAppointment.user.avatar_url}
+                  alt={nextAppointment.user.name}
+                />
+                <strong>{nextAppointment.user.name}</strong>
+                <span>
+                  <FiClock />
+                  {nextAppointment.hourFormatted}
+                </span>
+              </div>
+            </NextAppointment>
+          )}
           <Section>
             <strong>manhã</strong>
+            {morningAppointment.length === 0 && (
+              <p>Nenhum agendamento neste periodo</p>
+            )}
             {morningAppointment.map(appointment => (
               <Appointment key={appointment.id}>
                 <span>
@@ -182,7 +196,10 @@ const Dashboard: React.FC = () => {
           </Section>
           <Section>
             <strong>tarde</strong>
-            {afterAppointment.map(appointment => (
+            {afternoonAppointment.length === 0 && (
+              <p>Nenhum agendamento neste periodo</p>
+            )}
+            {afternoonAppointment.map(appointment => (
               <Appointment key={appointment.id}>
                 <span>
                   <FiClock />
